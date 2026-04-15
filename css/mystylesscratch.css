@@ -40,8 +40,8 @@
     position: fixed;
     bottom: 5px;
     height: 30px;
-    left: 0px;
-    right: 200px;
+    right: 20px;
     background-color: azure;
     text-align: right;
+    text-decoration: none;
 }
