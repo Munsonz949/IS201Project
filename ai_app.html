@@ -63,6 +63,25 @@
   .home-btn:hover { color: var(--dark); border-color: var(--muted); }
   .home-btn.hidden { visibility: hidden; pointer-events: none; }
 
+  .scratch-btn {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--light);
+    border-radius: var(--radius-sm);
+    padding: 5px 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+    margin-left: auto;
+  }
+  .scratch-btn:hover { color: var(--dark); border-color: var(--muted); }
+
   .logo {
     font-family: 'DM Serif Display', serif;
     font-size: 22px;
@@ -272,6 +291,7 @@
 <header>
   <div class="logo">re<span>call</span></div>
   <div class="tagline">spaced review</div>
+  <a class="scratch-btn" href="interests.html">✎ Scratch page</a>
   <button class="home-btn hidden" id="home-btn" onclick="window.showScreen('screen-home')">⌂ Home</button>
 </header>
 
