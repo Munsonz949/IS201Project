@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recall — Spaced Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --white: #ffffff;
+    --off: #f8f7f4;
+    --light: #f0ede8;
+    --muted: #c8c4bc;
+    --mid: #8a857c;
+    --dark: #2c2924;
+    --accent: #e85d26;
+    --accent-soft: #fdf0eb;
+    --accent2: #1a6b4a;
+    --accent2-soft: #eaf3ef;
+    --blue: #1e4fa3;
+    --blue-soft: #eaeffc;
+    --radius: 12px;
+    --radius-sm: 6px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--white);
+    color: var(--dark);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    padding: 28px 40px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .home-btn {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+    background: none;
+    border: 1px solid var(--light);
+    border-radius: var(--radius-sm);
+    padding: 5px 12px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .home-btn:hover { color: var(--dark); border-color: var(--muted); }
+  .home-btn.hidden { visibility: hidden; pointer-events: none; }
+
+  .logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    color: var(--dark);
+  }
+  .logo span { color: var(--accent); font-style: italic; }
+  .tagline { font-size: 12px; color: var(--muted); font-weight: 300; }
+
+  .main {
+    width: 100%;
+    max-width: 680px;
+    padding: 48px 24px 80px;
+    flex: 1;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeUp 0.35s ease; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px;
+    line-height: 1.15;
+    font-weight: 400;
+    color: var(--dark);
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--dark);
+    margin-bottom: 12px;
+    letter-spacing: -0.3px;
+  }
+
+  p.body {
+    font-size: 15px;
+    color: var(--mid);
+    line-height: 1.7;
+    font-weight: 300;
+    margin-bottom: 32px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 22px;
+    border-radius: var(--radius-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    border: 1.5px solid transparent;
+    text-decoration: none;
+  }
+
+  .btn-primary { background: var(--dark); color: var(--white); border-color: var(--dark); }
+  .btn-primary:hover { background: #1a1410; }
+  .btn-outline { background: var(--white); color: var(--dark); border-color: var(--muted); }
+  .btn-outline:hover { border-color: var(--dark); }
+  .btn-accent { background: var(--accent); color: var(--white); border-color: var(--accent); }
+  .btn-accent:hover { background: #cc4d1e; }
+  .btn-ghost { background: transparent; color: var(--mid); border-color: transparent; font-size: 13px; }
+  .btn-ghost:hover { color: var(--dark); }
+  .btn-full { width: 100%; justify-content: center; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+
+  .divider {
+    display: flex; align-items: center; gap: 12px;
+    margin: 28px 0; color: var(--muted); font-size: 12px;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--light);
+  }
+
+  .home-card {
+    border: 1.5px solid var(--light);
+    border-radius: var(--radius);
+    padding: 24px 20px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--off);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .home-card:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .home-card:hover .hc-cta { color: var(--accent); }
+  .home-card.drag { border-color: var(--accent); background: var(--accent-soft); }
+  .hc-icon { font-size: 22px; margin-bottom: 4px; }
+  .hc-title { font-size: 15px; font-weight: 500; color: var(--dark); line-height: 1.35; }
+  .hc-sub { font-size: 12px; color: var(--muted); font-weight: 300; line-height: 1.4; flex: 1; }
+  .hc-cta { font-size: 12px; font-weight: 500; color: var(--mid); margin-top: 8px; transition: color 0.15s; }
+  #file-input { display: none; }
+
+  .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 99px; font-size: 12px;
+    font-weight: 500; background: var(--light); color: var(--mid); margin: 3px;
+  }
+  .tag.new { background: var(--accent-soft); color: var(--accent); }
+  .tag.due { background: var(--blue-soft); color: var(--blue); }
+  .tag.done { background: var(--accent2-soft); color: var(--accent2); }
+
+  textarea, input[type="text"] {
+    width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--dark);
+    background: var(--off);
+    border: 1.5px solid var(--light);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    resize: vertical;
+    line-height: 1.6;
+    outline: none;
+    transition: border-color 0.15s;
+    margin-bottom: 4px;
+  }
+  textarea:focus, input[type="text"]:focus { border-color: var(--dark); background: var(--white); }
+  textarea { min-height: 110px; }
+
+  .progress-wrap { display: flex; align-items: center; gap: 12px; margin-bottom: 36px; }
+  .progress-bar { flex: 1; height: 3px; background: var(--light); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 99px; transition: width 0.4s ease; }
+  .progress-label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+
+  .q-card {
+    background: var(--off); border-radius: var(--radius);
+    padding: 28px; margin-bottom: 24px; border: 1px solid var(--light);
+  }
+  .q-label { font-size: 11px; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .q-text { font-size: 16px; line-height: 1.65; color: var(--dark); font-weight: 400; }
+  .q-topic { font-size: 12px; color: var(--mid); margin-top: 10px; }
+  .q-topic strong { color: var(--accent); }
+
+  .star-wrap { display: flex; gap: 8px; margin: 12px 0 24px; }
+  .star {
+    width: 38px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; cursor: pointer;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--light);
+    transition: all 0.15s;
+    background: var(--white);
+    color: var(--muted);
+  }
+  .star:hover, .star.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+
+  .result-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid var(--light); font-size: 14px;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-topic { font-weight: 500; color: var(--dark); }
+
+  .notice { padding: 12px 16px; border-radius: var(--radius-sm); font-size: 13px; margin-bottom: 20px; }
+  .notice-info { background: var(--blue-soft); color: var(--blue); }
+  .notice-success { background: var(--accent2-soft); color: var(--accent2); }
+
+  .score-display { display: flex; align-items: center; justify-content: center; margin: 32px 0; }
+  .score-orb {
+    width: 110px; height: 110px; border-radius: 50%;
+    background: var(--off); border: 3px solid var(--light);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .score-orb .num { font-family: 'DM Serif Display', serif; font-size: 38px; color: var(--dark); line-height: 1; }
+  .score-orb .den { font-size: 12px; color: var(--muted); }
+
+  .topic-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-radius: var(--radius-sm);
+    background: var(--off); margin-bottom: 8px; font-size: 14px; transition: background 0.15s;
+  }
+  .topic-item:hover { background: var(--light); }
+  .topic-name { font-weight: 500; color: var(--dark); flex: 1; }
+  .topic-meta { font-size: 12px; color: var(--muted); margin-right: 12px; }
+  .due-badge { font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 99px; }
+  .due-badge.yes { background: var(--accent-soft); color: var(--accent); }
+  .due-badge.no  { background: var(--light); color: var(--muted); }
+
+  .empty-state { text-align: center; padding: 40px 0; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">re<span>call</span></div>
+  <div class="tagline">spaced review</div>
+  <button class="home-btn hidden" id="home-btn" onclick="window.showScreen('screen-home')">⌂ Home</button>
+</header>
+
+<div class="main">
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="eyebrow">Spaced review</div>
+    <h1>Turn knowledge into<br><em style="font-style:italic;color:var(--accent)">lasting memory</em></h1>
+    <p class="body">Log what you've been studying, get challenged with applied scenarios, and let spaced repetition do the rest. Your progress lives in a simple spreadsheet you control.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+      <div class="home-card" id="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div class="hc-icon">📂</div>
+        <div class="hc-title">Continue where<br>you left off</div>
+        <div class="hc-sub">Upload your saved .xlsx memory bank</div>
+        <div class="hc-cta">Upload file →</div>
+      </div>
+      <div class="home-card" onclick="initFresh()">
+        <div class="hc-icon">✦</div>
+        <div class="hc-title">Start a fresh<br>memory bank</div>
+        <div class="hc-sub">Begin logging topics from scratch</div>
+        <div class="hc-cta">Get started →</div>
+      </div>
+    </div>
+
+    <input type="file" id="file-input" accept=".xlsx,.xls">
+
+    <div style="text-align:center;">
+      <button class="btn btn-ghost" onclick="downloadTemplate()" style="font-size:12px;">⬇ Download blank template (.xlsx)</button>
+    </div>
+
+    <div id="loaded-notice" style="display:none;margin-top:20px;"></div>
+  </div>
+
+  <!-- ADD TOPIC -->
+  <div class="screen" id="screen-add">
+    <div class="eyebrow">New knowledge</div>
+    <h2 id="add-headline">Log something fresh</h2>
+    <p class="body" style="margin-bottom:16px;">Name the concept, skill, or idea — then jot down the core of what you learned in your own words. Be specific enough that you'll remember what you meant.</p>
+
+    <label style="font-size:13px;color:var(--mid);font-weight:500;display:block;margin-bottom:6px;">Topic name</label>
+    <input type="text" id="topic-name" placeholder="e.g. Bayesian inference, React hooks, Treaty of Westphalia…" style="margin-bottom:16px;">
+
+    <label style="font-size:13px;color:var(--mid);font-weight:500;display:block;margin-bottom:6px;">What did you learn? <span style="font-weight:300;">(in your own words)</span></label>
+    <textarea id="topic-notes" placeholder="Summarise the key idea, include an example if useful…"></textarea>
+
+    <div class="btn-row" style="margin-top:16px;">
+      <button class="btn btn-primary" onclick="saveTopic()">Add to memory bank →</button>
+      <button class="btn btn-ghost" onclick="showScreen('screen-dashboard')">Skip for now</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="screen" id="screen-dashboard">
+    <div class="eyebrow">Memory bank</div>
+    <h2>Your topics</h2>
+
+    <div id="due-count-notice" class="notice notice-info" style="display:none;"></div>
+
+    <div id="topic-list"></div>
+    <div class="empty-state" id="topic-empty" style="display:none;">No topics yet. Add something you learned!</div>
+
+    <div class="btn-row" style="margin-top:24px;">
+      <button class="btn btn-primary" onclick="startSession()" id="start-session-btn">Start review session →</button>
+      <button class="btn btn-outline" onclick="showScreen('screen-add')">+ Add topic</button>
+      <button class="btn btn-ghost" onclick="saveAndDownload()">⬇ Save &amp; download</button>
+    </div>
+  </div>
+
+  <!-- REVIEW -->
+  <div class="screen" id="screen-review">
+    <div class="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+      <div class="progress-label" id="prog-label">0 / 3</div>
+    </div>
+
+    <div class="q-card">
+      <div class="q-label" id="q-num">Question 1 of 3</div>
+      <div class="q-text" id="q-text">Loading question…</div>
+      <div class="q-topic">Topic: <strong id="q-topic-name">—</strong></div>
+    </div>
+
+    <label style="font-size:13px;color:var(--mid);font-weight:500;display:block;margin-bottom:6px;">Your answer</label>
+    <textarea id="answer-box" placeholder="Write your answer here…" style="min-height:130px;"></textarea>
+
+    <div style="margin-top:16px;margin-bottom:6px;font-size:13px;color:var(--mid);font-weight:500;">How well did you know this? <span style="font-weight:300;">(self-rate)</span></div>
+    <div class="star-wrap" id="star-wrap"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-accent" onclick="submitAnswer()">Submit →</button>
+    </div>
+
+    <div id="feedback-box" style="display:none;margin-top:20px;padding:16px 20px;border-radius:var(--radius-sm);border:1px solid var(--light);background:var(--off);font-size:14px;line-height:1.7;color:var(--mid);"></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div class="screen" id="screen-results">
+    <div class="eyebrow">Session complete</div>
+    <h2>Review summary</h2>
+
+    <div class="score-display">
+      <div class="score-orb">
+        <div class="num" id="res-avg">—</div>
+        <div class="den">avg score</div>
+      </div>
+    </div>
+
+    <div id="results-list"></div>
+
+    <div class="notice notice-success" style="margin-top:20px;">Memory bank updated. Topics with lower scores are scheduled sooner.</div>
+
+    <div class="btn-row" style="margin-top:24px;">
+      <button class="btn btn-primary" onclick="saveAndDownload()">⬇ Save &amp; download</button>
+      <button class="btn btn-outline" onclick="showScreen('screen-dashboard')">Back to dashboard</button>
+      <button class="btn btn-ghost" onclick="showScreen('screen-add')">+ Add more</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let db = { topics: [] };
+let sessionTopics = [], sessionQ = [], sessionResults = [];
+let currentQ = 0, selectedRating = 0;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function daysDiff(dateStr) {
+  if (!dateStr) return 9999;
+  return Math.floor((new Date() - new Date(dateStr)) / 86400000);
+}
+
+function nextReviewDays(score, times) {
+  const base = [1, 2, 4, 7, 14][Math.min(score - 1, 4)] || 1;
+  return Math.min(base * Math.pow(1.5, Math.max((times || 1) - 1, 0)), 60);
+}
+
+function isDue(topic) {
+  if (!topic.lastReview) return true;
+  return daysDiff(topic.lastReview) >= nextReviewDays(topic.avgScore || 3, topic.reviewCount || 0);
+}
+
+function topicsToSheet() {
+  const rows = [['id','name','notes','added','lastReview','reviewCount','avgScore','history']];
+  db.topics.forEach(t => rows.push([
+    t.id, t.name, t.notes, t.added,
+    t.lastReview || '', t.reviewCount || 0, +(t.avgScore || 0).toFixed(2),
+    JSON.stringify(t.history || [])
+  ]));
+  return rows;
+}
+
+function sheetToTopics(ws) {
+  const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+  if (data.length < 2) return [];
+  return data.slice(1).map(r => ({
+    id: r[0] || Date.now().toString(),
+    name: r[1] || '', notes: r[2] || '',
+    added: r[3] || today(), lastReview: r[4] || '',
+    reviewCount: +r[5] || 0, avgScore: +r[6] || 0,
+    history: (() => { try { return JSON.parse(r[7] || '[]'); } catch(e){ return []; } })()
+  })).filter(t => t.name);
+}
+
+function downloadTemplate() {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet([['id','name','notes','added','lastReview','reviewCount','avgScore','history']]);
+  ws['!cols'] = [{wch:20},{wch:30},{wch:50},{wch:12},{wch:12},{wch:12},{wch:12},{wch:40}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Topics');
+  XLSX.writeFile(wb, 'recall_memory_bank.xlsx');
+}
+
+function saveAndDownload() {
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(topicsToSheet());
+  ws['!cols'] = [{wch:20},{wch:30},{wch:50},{wch:12},{wch:12},{wch:12},{wch:12},{wch:60}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Topics');
+  XLSX.writeFile(wb, 'recall_memory_bank.xlsx');
+}
+
+document.getElementById('file-input').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const wb = XLSX.read(ev.target.result, { type: 'binary' });
+      db.topics = sheetToTopics(wb.Sheets[wb.SheetNames[0]]);
+      const notice = document.getElementById('loaded-notice');
+      notice.innerHTML = `<div class="notice notice-success">✓ Loaded ${db.topics.length} topic${db.topics.length !== 1 ? 's' : ''} from file.</div>`;
+      notice.style.display = 'block';
+      setTimeout(() => { window.showScreen('screen-add'); }, 900);
+    } catch(err) { alert('Could not read file. Please use a valid recall .xlsx file.'); }
+  };
+  reader.readAsBinaryString(file);
+});
+
+const uz = document.getElementById('upload-zone');
+uz.addEventListener('dragover', e => { e.preventDefault(); uz.classList.add('drag'); });
+uz.addEventListener('dragleave', () => uz.classList.remove('drag'));
+uz.addEventListener('drop', e => {
+  e.preventDefault(); uz.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  document.getElementById('file-input').files = dt.files;
+  document.getElementById('file-input').dispatchEvent(new Event('change'));
+});
+
+function initFresh() { db = { topics: [] }; window.showScreen('screen-add'); }
+
+function saveTopic() {
+  const name = document.getElementById('topic-name').value.trim();
+  const notes = document.getElementById('topic-notes').value.trim();
+  if (!name) { document.getElementById('topic-name').focus(); return; }
+  db.topics.push({ id: 'topic_' + Date.now(), name, notes, added: today(), lastReview: '', reviewCount: 0, avgScore: 0, history: [] });
+  document.getElementById('topic-name').value = '';
+  document.getElementById('topic-notes').value = '';
+  window.showScreen('screen-dashboard');
+}
+
+function renderDashboard() {
+  const list = document.getElementById('topic-list');
+  const empty = document.getElementById('topic-empty');
+  const notice = document.getElementById('due-count-notice');
+  if (!db.topics.length) {
+    list.innerHTML = ''; empty.style.display = 'block'; notice.style.display = 'none';
+    document.getElementById('start-session-btn').disabled = true; return;
+  }
+  empty.style.display = 'none';
+  document.getElementById('start-session-btn').disabled = false;
+  const dueCount = db.topics.filter(isDue).length;
+  if (dueCount) { notice.textContent = `${dueCount} topic${dueCount > 1 ? 's are' : ' is'} due for review.`; notice.style.display = 'block'; }
+  else { notice.style.display = 'none'; }
+  list.innerHTML = db.topics.map(t => {
+    const due = isDue(t);
+    const last = t.lastReview ? `Reviewed ${daysDiff(t.lastReview)}d ago` : 'Never reviewed';
+    return `<div class="topic-item">
+      <div>
+        <div class="topic-name">${escHtml(t.name)}</div>
+        ${t.notes ? `<div style="font-size:12px;color:var(--muted);margin-top:2px;">${escHtml(t.notes.slice(0,70))}${t.notes.length>70?'…':''}</div>` : ''}
+      </div>
+      <div class="topic-meta">${last}</div>
+      <span class="due-badge ${due?'yes':'no'}">${due?'due':'ok'}</span>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function startSession() {
+  if (!db.topics.length) return;
+  const due = db.topics.filter(isDue);
+  const notDue = db.topics.filter(t => !isDue(t));
+  sessionTopics = [...due, ...notDue].slice(0, 3);
+  sessionQ = sessionTopics.map((t, i) => ({ topic: t, question: buildQuestion(t, i) }));
+  currentQ = 0; sessionResults = []; selectedRating = 0;
+  window.showScreen('screen-review');
+  renderQuestion();
+}
+
+function buildQuestion(topic, qi) {
+  const templates = [
+    `Apply "${topic.name}" to a real-world scenario. Describe a situation where you'd use this knowledge and what it would look like in practice.`,
+    `You're explaining "${topic.name}" to a curious friend with no background. What analogy or example would you use, and why does it work?`,
+    `What's the most common misconception about "${topic.name}"? How would you correct it?`,
+    `Design a brief experiment or test to demonstrate "${topic.name}" in action.`,
+    `How does "${topic.name}" connect to something else you know? Describe the link clearly.`,
+    `What question would you ask to check if someone really understands "${topic.name}"?`,
+  ];
+  return templates[(qi * 2 + Math.floor(Math.random() * 2)) % templates.length];
+}
+
+function renderQuestion() {
+  const q = sessionQ[currentQ];
+  const total = sessionQ.length;
+  document.getElementById('prog-fill').style.width = (currentQ / total * 100) + '%';
+  document.getElementById('prog-label').textContent = `${currentQ} / ${total}`;
+  document.getElementById('q-num').textContent = `Question ${currentQ + 1} of ${total}`;
+  document.getElementById('q-text').textContent = q.question;
+  document.getElementById('q-topic-name').textContent = q.topic.name;
+  document.getElementById('answer-box').value = '';
+  document.getElementById('feedback-box').style.display = 'none';
+  selectedRating = 0;
+  const sw = document.getElementById('star-wrap');
+  sw.innerHTML = '';
+  const labels = ['','Barely','Partly','Mostly','Well','Perfectly'];
+  for (let i = 1; i <= 5; i++) {
+    const s = document.createElement('div');
+    s.className = 'star'; s.textContent = i; s.title = labels[i];
+    s.onclick = () => setRating(i);
+    sw.appendChild(s);
+  }
+}
+
+function setRating(r) {
+  selectedRating = r;
+  document.querySelectorAll('.star').forEach((s, i) => s.classList.toggle('active', i < r));
+}
+
+function submitAnswer() {
+  const answer = document.getElementById('answer-box').value.trim();
+  if (!answer) { document.getElementById('answer-box').focus(); return; }
+  if (!selectedRating) {
+    document.querySelector('.star-wrap').style.outline = '2px solid var(--accent)';
+    setTimeout(() => document.querySelector('.star-wrap').style.outline = '', 1200); return;
+  }
+  const q = sessionQ[currentQ];
+  sessionResults.push({ topic: q.topic, rating: selectedRating, answer });
+  const fb = document.getElementById('feedback-box');
+  const msgs = [
+    ['Keep going — struggle is part of learning.','Review the core concept again soon.'],
+    ["You've got the idea. A bit more practice will solidify it.",'Try connecting it to what you already know.'],
+    ['Solid understanding — well done.','Test yourself one more time in a few days.'],
+    ['Strong grasp of this topic!','You\'re internalising it well.'],
+    ['Excellent! This is deeply understood.','You can stretch to harder applications.'],
+  ];
+  const [l1, l2] = msgs[selectedRating - 1];
+  fb.innerHTML = `<strong style="color:var(--dark);font-weight:500;">${l1}</strong> ${l2}`;
+  fb.style.display = 'block';
+  setTimeout(() => {
+    updateTopic(q.topic, selectedRating);
+    currentQ++;
+    if (currentQ < sessionQ.length) renderQuestion();
+    else showResults();
+  }, 1400);
+  const btn = document.querySelector('#screen-review .btn-accent');
+  btn.disabled = true; btn.textContent = '✓';
+  setTimeout(() => { btn.disabled = false; btn.textContent = 'Submit →'; }, 1400);
+}
+
+function updateTopic(topic, rating) {
+  const t = db.topics.find(x => x.id === topic.id);
+  if (!t) return;
+  t.history = t.history || [];
+  t.history.push({ date: today(), score: rating });
+  t.reviewCount = (t.reviewCount || 0) + 1;
+  t.avgScore = t.history.reduce((s, h) => s + h.score, 0) / t.history.length;
+  t.lastReview = today();
+}
+
+function showResults() {
+  window.showScreen('screen-results');
+  const avg = sessionResults.reduce((s, r) => s + r.rating, 0) / sessionResults.length;
+  document.getElementById('res-avg').textContent = avg.toFixed(1);
+  document.getElementById('results-list').innerHTML = sessionResults.map(r => {
+    const filled = Math.round(r.rating);
+    return `<div class="result-row">
+      <div class="result-topic">${escHtml(r.topic.name)}</div>
+      <div style="font-size:16px;color:var(--accent);letter-spacing:1px;">${'★'.repeat(filled)}${'☆'.repeat(5-filled)}</div>
+    </div>`;
+  }).join('');
+}
+
+const addHeadlines = [
+  'Log something fresh',
+  'What stuck with you today?',
+  'Capture a new idea',
+  'Something clicked — write it down',
+  'Add to your knowledge base',
+  'What are you working to understand?',
+];
+let headlineIdx = 0;
+
+const origShow = showScreen;
+window.showScreen = function(id) {
+  origShow(id);
+  if (id === 'screen-dashboard') renderDashboard();
+  if (id === 'screen-add') {
+    const h = document.getElementById('add-headline');
+    if (h) { h.textContent = addHeadlines[headlineIdx % addHeadlines.length]; headlineIdx++; }
+  }
+  const homeBtn = document.getElementById('home-btn');
+  if (homeBtn) homeBtn.classList.toggle('hidden', id === 'screen-home');
+};
+
+window.showScreen('screen-home');
+</script>
+</body>
+</html>

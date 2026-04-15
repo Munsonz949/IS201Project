@@ -1,0 +1,47 @@
+
+.headerblock{
+    position: relative;
+    font-style: italic;
+    height: 10px;
+}
+
+.leftblock{
+    position: absolute;
+    /* top: 14px; */
+    left: 10px;
+    width: 50%;
+    /* bottom: 200px; */
+}
+
+.rightblock{
+    position: absolute;
+    /* top: 14px; */
+    right: 10px;
+    width: 50%;
+    /* bottom: 200px; */
+}
+
+.impact{
+    font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+}
+
+.blue{
+    color: blue;
+}
+
+.map{
+    position: relative;
+    top: 600px;
+    width: 1000px;
+    
+}
+
+.footerblock{
+    position: fixed;
+    bottom: 5px;
+    height: 30px;
+    left: 0px;
+    right: 200px;
+    background-color: azure;
+    text-align: right;
+}
